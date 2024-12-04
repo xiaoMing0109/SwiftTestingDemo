@@ -3,7 +3,6 @@
 //  AudioPlaybackManager_Tests
 //
 //  Created by LM on 2024/11/29.
-//  Copyright © 2024 CocoaPods. All rights reserved.
 //
 
 import Testing
@@ -11,6 +10,24 @@ import Testing
 // MARK: - Macros
 
 struct SwiftTestingMacrosTests {
+    
+    // MARK: #require
+
+    @Test func testIsValid() throws {
+        let isValid = true
+        let _ = try #require(isValid)// Test failed when `isValid == false`.
+        #expect(isValid == true)// Not excuted when `isValid == false`.
+    }
+    
+    @Test func testOptionalValue() throws {
+        let optionValue: Int? = 0
+        let unwrapValue = try #require(optionValue)
+        #expect(unwrapValue != nil)
+        
+        let array: [Int] = []
+        // Warning: Test failure when you open following line comment!!!
+//        let _ = try #require(array.first)
+    }
     
     // MARK: throws
 
@@ -26,7 +43,7 @@ struct SwiftTestingMacrosTests {
             return a / b
         }
     }
-
+    
     @Test func testThrowErrors() throws {
         let sut = TestEntity()
         
@@ -52,17 +69,15 @@ struct SwiftTestingMacrosTests {
             try sut.division(1, 0)
         }
     }
-
-    // MARK: #require
-
-    @Test func testOptionalValue() throws {
-        let optionValue: Int? = 0
-        let unwrapValue = try #require(optionValue)
-        #expect(unwrapValue != nil)
+    
+    // MARK: withKnownIssue
+    
+    @Test func testWithKnownIssue() throws {
+        let sut = TestEntity()
         
-        let nilValue: Int? = nil
-        // Warning: Test failure to open this comment!!!
-    //        let _ = try #require(nilValue, "`nilValue` is nil.")
+        withKnownIssue {
+            let _ = try sut.division(1, 0)
+        }
     }
 }
 
@@ -77,6 +92,13 @@ func renameTestFunction() {
     
     boolValue = true
     #expect(boolValue)
+}
+
+// MARK: Bug
+
+@Test(.bug("https://github.com/example/"))
+func bugExample() throws {
+    // ...
 }
 
 // MARK: Tag
@@ -102,7 +124,8 @@ extension Tag {
     @Tag static var isNew: Self
 }
 
-@Suite(.tags(.isNew)) struct TagTests {
+@Suite(.tags(.isNew))
+struct TagTests {
     
     @Test func tagSampleTest1() throws {
         let a = 2
@@ -126,6 +149,12 @@ let isTestEnabled: Bool = false
 
 @Test(.disabled(if: !isTestEnabled)) func testFuncDisabled() {
     // ✘ Test testFuncDisabled() skipped.
+}
+
+@Test(.disabled("Explain the reason for func skipping."))
+func testFuncWillBeSkipped() {
+    let array: [Int] = []
+    #expect(array[0] == 0)
 }
 
 // MARK: TimeLimit
@@ -158,7 +187,7 @@ struct SerializedTests {
     }
 }
 
-// MARK: - Others
+// MARK: - More
 
 // MARK: Parameterized tests to the rescue
 
@@ -232,5 +261,17 @@ class ConfirmationEvent {
             confirm()
         }
         await confirmationEvent.action(count: n)
+    }
+}
+
+// MARK: Sub-groups
+
+struct GroupTests {
+    
+    struct SubgroupTests {
+        @Test func sampleTest() throws {
+            let a = 2
+            try #require(a < 3)
+        }
     }
 }
